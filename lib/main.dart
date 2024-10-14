@@ -13,7 +13,8 @@ void main() {
 
 class GameState extends ChangeNotifier {
   List<CardModel> cards = [];
-  List<int> flippedCardIndices = []; // Track indices of currently flipped cards.
+  List<int> flippedCardIndices =
+      []; // Track indices of currently flipped cards.
 
   GameState() {
     _initializeCards();
@@ -21,17 +22,32 @@ class GameState extends ChangeNotifier {
 
   // Initialize the cards with front and back designs.
   void _initializeCards() {
-    List<String> frontContent = [
-      'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
-      'E', 'E', 'F', 'F', 'G', 'G', 'H', 'H'
+    List<String> backContent = [
+      'A',
+      'A',
+      'B',
+      'B',
+      'C',
+      'C',
+      'D',
+      'D',
+      'E',
+      'E',
+      'F',
+      'F',
+      'G',
+      'G',
+      'H',
+      'H'
     ];
 
-    frontContent.shuffle(); // Shuffle the cards to randomize the order.
+    backContent.shuffle(); // Shuffle the cards to randomize the order.
 
     cards = List.generate(16, (index) {
       return CardModel(
-        front: "Back Design",   // Front is String.
-        back: frontContent[index],          // Back is also a String.
+        front: Image.network(
+            'https://t4.ftcdn.net/jpg/02/22/47/85/240_F_222478566_O95CFavH8wKiXFFcaRjxNQ19yDsvaw6o.jpg'), // Front is String.
+        back: backContent[index], // Back is also a String.
       );
     });
   }
@@ -55,7 +71,7 @@ class GameState extends ChangeNotifier {
     final firstIndex = flippedCardIndices[0];
     final secondIndex = flippedCardIndices[1];
 
-    if (cards[firstIndex].front == cards[secondIndex].front) {
+    if (cards[firstIndex].back == cards[secondIndex].back) {
       // Cards match, keep them face-up.
       flippedCardIndices.clear();
     } else {
@@ -81,14 +97,14 @@ class GameState extends ChangeNotifier {
 }
 
 class CardModel {
-  final String front; // Front side of the card, type String.
-  final String back;  // Back side of the card, type String.
+  final Image front; // Front side of the card, type String.
+  final String back; // Back side of the card, type String.
   bool isFaceUp;
 
   CardModel({
     required this.front,
     required this.back,
-    this.isFaceUp = false,  // Default to face-down.
+    this.isFaceUp = false, // Default to face-down.
   });
 }
 
@@ -153,7 +169,8 @@ class FlipCard extends StatefulWidget {
   _FlipCardState createState() => _FlipCardState();
 }
 
-class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin {
+class _FlipCardState extends State<FlipCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _flipAnimation;
 
@@ -190,12 +207,20 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
         // If the value is beyond 90 degrees (pi/2), we reverse the content of the card
         bool isFrontVisible = rotationValue <= pi / 2;
 
+        // To keep the text from flipping, we reverse it when the card is flipped past 90 degrees
+        double contentRotation = isFrontVisible ? 0 : pi;
+
         return Transform(
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.001) // Perspective to make the flip more realistic
+            ..setEntry(3, 2, 0.001) // Perspective for realistic 3D effect
             ..rotateY(rotationValue),
           alignment: Alignment.center,
-          child: isFrontVisible ? _buildFrontCard() : _buildBackCard(),
+          child: Transform(
+            transform: Matrix4.identity()
+              ..rotateY(contentRotation), // Reverse text when necessary
+            alignment: Alignment.center,
+            child: isFrontVisible ? _buildFrontCard() : _buildBackCard(),
+          ),
         );
       },
     );
@@ -214,19 +239,16 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          widget.card.front, // Front content (text or image)
-          style: TextStyle(fontSize: 24, color: Colors.white),
-        ),
-      ),
+      child: Center(child: widget.card.front
+          // Front content (text or image)
+          ),
     );
   }
 
   Widget _buildBackCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey, // Back design color
+        color: Colors.blueAccent, // Back design color
         borderRadius: BorderRadius.circular(10.0),
         boxShadow: [
           BoxShadow(
